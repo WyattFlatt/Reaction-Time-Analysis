@@ -10,8 +10,8 @@ hand usage on reaction time performance measured in milliseconds.
 A $2^3$ factorial randomized block design with replication was used to account for
 between-participant variation while allowing for the estimation of main
 effects and interaction effects between factors. Statistical modeling and
-ANOVA techniques were applied to determine which factors significantly
-influenced average reaction times and reaction time variability.
+ANOVA techniques were applied to determine which factors were significantly
+related with average reaction times and reaction time variability.
 
 ## Dataset
 
