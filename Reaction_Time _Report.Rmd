@@ -1,0 +1,214 @@
+---
+title: "Reaction Time Analysis"
+author: "Wyatt Flatt"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE, message=FALSE, include=FALSE}
+# Loading dependencies
+library(tidyverse)
+library(MASS)
+```
+
+# Problem Description
+
+
+  In a world with many constant stimuli, it is important to understand what affects our ability to react to our environment. Without a proper understanding of how we react to our environment, we are much more likely to make undesirable and even dangerous mistakes. This analysis aims to determine how some of these stimuli and conditions affect a person's reaction time, in milliseconds, and determine which conditions result in the fastest reaction times.
+  
+
+# Factors
+
+  This experiment was designed to test specific features' associations with reaction time; however, these features were chosen to act as proxies for broader, harder-to-measure factors. While only the direct relationships of the given features with reaction time can be determined, these factors can provide insight into how these broader categories relate as well. Each factor had two levels, "Yes" and "No," relating to the presence or absence of some event occurring during a reaction time test.
+  
+  The first factor, Noise, indicates the presence or absence of white noise during the reaction time test. This white noise was played at a high volume, roughly 70 decibels. This factor was included to get a better sense of whether auditory stimulation with a relatively level tone had any relationship with a participant's reaction time, essentially acting as a proxy to determine if the noises that we encounter every day actually dull or heighten our alertness. Because white noise could act as an auditory arousal agent or as an auditory distraction, I was unsure of how this factor would relate to reaction time.
+  
+  The second factor, Multitask, indicates whether the individual being tested performed a counting task while taking the reaction time test. This test was carried out by making the test taker count backwards from a random three-digit number by three while performing the reaction time test. This factor was included to determine if there is a relationship between splitting attention and a person's reaction time. Because it has long been stated that people struggle to multitask, and from personal experiences with attempting to multitask, I expected that the presence of multitasking would be associated with slower reaction times.
+  
+  The last factor, Dominant_Hand, indicates whether the test taker used their dominant or non-dominant hand to perform the reaction time test. This feature was included less as a way to make connections with more broad topics and more as a way to see if repeated motor actions relate to increased reaction time speeds. Because people use their dominant hand more often, and it seems reasonable to assume that repeated use has some relationship with reaction time, I expected that test takers using their dominant hand would result in faster reaction times.
+  
+  A blocking factor, Person, was also included in this experiment. Because the results from performing this type of test on one participant cannot be generalized, I decided to include a second participant in the testing process. Though the inclusion of one more participant does not change that much, it makes the results slightly more generalizable.
+
+
+# Disturbances
+
+   Because this experiment involved repeatedly exposing participants to similar conditions, a participant's ability to learn could alter the results. This learning could come from a participant simply improving their motor skills during the experimental runs or becoming familiar with the factors used during the experimental runs, lessening those factors' impacts on reaction times. While learning is an apparent factor in this type of study and was not measured, the experimental procedure was set up in an attempt to reduce the effect of a participant's ability to learn.
+   
+   In almost the opposite sense, performing many experimental runs could cause a participant to fatigue, especially in the case of performing a repetitive action. While this experiment resulted in many runs for each participant, the runs were performed quickly. Because of this, it was expected that fatigue would not play much of a role in modeling results. However, because fatigue was not controlled for, it is important to realize that this could have played a role in the experimental results.
+   
+   Lastly, the distance of a participant from the testing apparatus could result in different reaction time speeds. If a participant is further from the testing apparatus, then their reaction time would likely be longer. This factor was controlled for during experimental runs.
+   
+
+# Experimental Design
+
+  This experiment utilized a $2^3$ factorial randomized block design with replication. The $2^3$ factorial structure arises from the use of three two-level factors, with all level combinations considered. The randomized block design was implemented by treating each participant as a block and testing all level combinations with each participant in a randomized order. Replication was created by having each participant perform each level-combination four times. The use of replication allowed for a more reliable estimate of the reaction time and its variability, given each level combination. The code used to create this design grid and the first ten runs of the design are viewable in Code Block 1.
+  
+### Code Block 1: Creating the Design Grid and Randomizing Run Order
+```{r}
+# Setting seed for experimental combination reproducibility
+set.seed(0)
+
+# Creating design grid
+design <- expand.grid(
+  Noise = factor(c("No", "Yes")),
+  Multitask = factor(c("No", "Yes")),
+  Dominant_Hand = factor(c("No", "Yes")),
+  Replicate = 1:4,
+  Person = factor(c("P1", "P2"))
+)
+
+# Randomize run order
+design <- design[sample(nrow(design)), ]
+
+# Assigning run numbers
+design$Run <- 1:nrow(design)
+
+# Showing design
+head(design, n = 10)
+```
+
+  During testing, reaction times were measured using a simple reaction time phone application. To get a reaction time, a participant would have to tap the screen of the phone to start a given experimental run. Upon tapping the screen, the participant was prompted with a message saying "Wait for green." The screen would remain red for a random amount of time until it swiftly switched to green. The participant would tap the screen, and the given reaction time, in milliseconds, would be displayed.
+  
+  During each experimental run, the participant was subject to one combination of the three factors, decided by randomization. For a given run, if the Noise factor was "Yes," the participant would be subject to white noise averaging roughly 70 decibels in volume during the reaction-time test. If the Multitask factor was "Yes," the participant would be forced to count backwards by three from a randomly selected three-digit number aloud during the test. Lastly, if the Dominant_Hand factor was "Yes," the participant would use their dominant hand to hold the phone and their dominant thumb to tap the screen during testing.
+
+To account for factors that could affect the results of the tests, multiple steps were taken. First, to eliminate the effect of a participant's distance from the phone on the reaction time, participants' thumbs were stationed one inch from the phone screen during the testing procedure. In an attempt to minimize the increases in a participant's reaction time from learning due to repeated exposure to each factor, pre-trial experimental runs were taken. Each participant performed six pre-trial reaction time tests: two using their left hand, two while performing the counting task, and two while white noise was played. While this procedure likely did not remove all of the effects from learning, the goal was to expose participants to the testing factors before true experimental runs so that the initial increases in performance would occur before runs were recorded. The hope is that any gains in reaction speed would be marginal after this point, thus not affecting the results too harshly.
+
+To evaluate the effects of the experimental factors on reaction time, linear regression models were fit using the mean reaction time and the log of the variance of reaction times as the response and the blocking variable and experimental factors as predictors. In these models, interactions between each of the factors were also included to determine if each factor's effect was dependent on the other factors. Analysis of variance (ANOVA) was then performed on each regression model to determine the statistical significance of the relationships between factors or interactions and reaction time while accounting for between-participant variation. This also allowed for the interpretation of estimated factor effects. A smaller-the-better analysis was also performed to determine which combination of factors would reduce mean reaction times the most and reduce variance around these reaction times.
+
+
+# Experimental Execution
+
+
+Experimental runs were carried out in the simple environment displayed in Figure 1, and the corresponding reaction times were added to the design grid as shown in Code Block 2. During experimental runs, if there was an outside factor that disturbed the run, that specific run was repeated. This only occurred twice during the testing process.
+
+### Figure 1: Experimental Environment
+```{r, echo=FALSE, out.width="30%", out.height="30%", fig.align='center',}
+knitr::include_graphics("test1.jpeg")
+```
+
+
+### Code Block 2: Adding Reaction Times to the Design Grid
+```{r}
+# Collecting reaction times from experiments
+design$react_time <- c(274,237,220,315,223,259,352,283,275,218,271,244,270,329,
+                       285,239,234,358,240,344,239,226,285,214,270,298,296,234,
+                       245,246,276,283,276,268,314,291,218,290,225,305,220,289,
+                       384,213,401,417,297,312,239,294,277,310,278,279,301,318,
+                       238,384,270,271,270,296,268,251)
+```
+
+
+# Data Analysis
+
+Before collecting ANOVA results, the reaction time data were summarized within each block–treatment combination by computing the mean and the variance. These summaries were used to fit the two separate ANOVA models: one to assess the effects of the factors on the mean reaction time, and another to evaluate their impact on variability. These separate effects are necessary in order to perform the smaller-the-better analysis to determine which factor combinations result in the lowest mean reaction time and lowest variability around this value. Because the squaring aspect of sample variances causes these values to be inherently positive and right-skewed, a natural logarithm transformation was applied to the variance prior to analysis. This transformation helps to satisfy the assumptions of the linear model. Additionally, the factor variables were summation-encoded so that factor effect estimates would be based on differences from the mean reaction time or mean log of variance. These actions are detailed in Code Block 3.
+
+### Code Block 3: Summarizing Values by Combination and Implementing Sum Coding
+```{r, message=FALSE}
+# Collecting the average and variance by level combination
+summary_design <- design %>%
+  group_by(Noise,Multitask,Dominant_Hand,Person) %>%
+  summarise(mean_react = mean(react_time),
+            var_react = log(var(react_time)))
+
+# Changing contrasts to sum coding
+contrasts(summary_design$Noise) <- matrix(c(-1, 1), ncol = 1)
+contrasts(summary_design$Multitask) <- matrix(c(-1, 1), ncol = 1)
+contrasts(summary_design$Dominant_Hand) <- matrix(c(-1, 1), ncol = 1)
+contrasts(summary_design$Person) <- matrix(c(-1, 1), ncol = 1)
+```
+
+
+After fitting the linear regression with the mean reaction time as the response and using an ANOVA to test significance, it was determined that the Multitask factor was the only factor to have a statistically significant relationship with the mean reaction time at the 5 percent significance level. The ANOVA summary table presented in Code Block 4 shows that the variability in mean reaction times was heavily attributable to the Multitask factor. Based on the F-test used to determine whether there was a significant difference in the mean reaction time between the tests with the presence or absence of the Multitask variable, the p-value was 0.00293, indicating significant evidence of a relationship.
+
+
+### Code Block 4: Determining Significant Effects on Mean Reaction Time
+```{r}
+# Creating ANOVA
+mean_aov <- aov(mean_react ~ Person + Noise*Multitask*Dominant_Hand, data = summary_design)
+
+# Showing ANOVA results
+summary(mean_aov)
+```
+Because each factor used in the experiment had two levels, analysis of statistical significance was also achievable by performing individual factor t-tests for estimates of the linear regression model. These t-tests were performed by testing $H_0: \beta_j = 0$ versus $H_A: \beta_j \neq 0$ for a given factor $X_j$. The results can be found in Code Block 5. Additionally, Code Block 5 gives the estimated effects of the factors on the mean reaction time. Based on the interpretation of these estimated effects, the mean reaction time across all level combinations was 278.84 milliseconds. For level combinations in which multitasking occurred, the mean reaction time was 27.81 milliseconds slower, indicating that there was an average difference of 55.62 milliseconds in reaction times between level combinations where multitasking occurred versus where it did not. This reaction time difference between the levels of the Multitask variable is visible in Figure 2.
+
+### Code Block 5: Estimated Effects of Features
+```{r}
+# Determining effect estimates
+summary.lm(mean_aov)$coefficients
+```
+
+### Figure 2: Main Effects Plot
+```{r, out.height="35%", out.width="70%", fig.align='center', echo=FALSE}
+# Compute means for each factor separately
+me_data <- summary_design %>%
+  pivot_longer(cols = c(Noise, Multitask, Dominant_Hand),
+               names_to = "Factor",
+               values_to = "Level") %>%
+  group_by(Factor, Level) %>%
+  summarise(mean_rt = mean(mean_react), .groups = "drop")
+
+# Plot
+ggplot(me_data, aes(x = Level, y = mean_rt, group = 1)) +
+  geom_point(size = 3) +
+  geom_line() +
+  facet_wrap(~ Factor, scales = "free_x") +
+  labs(
+    x = "Factor Level",
+    y = "Mean Reaction Time (ms)"
+  ) +
+  theme_minimal() 
+```
+
+To determine whether the conclusions of this analysis were valid, residual diagnostics were conducted to declare whether the linear model assumptions held. Upon analysis of Figure 3, it appears as though the model has been correctly specified and there is no clear presence of increased variability of residuals about any fitted values, demonstrating that heteroscedasticity is not an issue. Additionally, there does not appear to be any outliers, and the residuals appear normally distributed based on the Q-Q plot. These findings indicate that our model results can be trusted.
+
+### Figure 3: Residual Diagnostics of Mean Reaction Time Model
+```{r, fig.align='center', echo=FALSE}
+par(mfrow=c(2,2))
+plot(mean_aov)
+```
+
+Once the assessment of factor effects on mean reaction times was completed, the assessment of factor effects on variability began, following the same steps. A linear regression model was fit using the log of the variance of reaction times as the response and the different factors and blocking variable as predictors. An ANOVA was then conducted to determine the sources of variability in the log variance of reaction time, ultimately indicating factors that significantly impact the variance of reaction times. This process is highlighted in Code Block 6. Because the F-tests determining significant average differences in the log of the variance of reaction times between factor levels did not indicate statistical significance for any factor, we concluded that none of the factors have a statistically significant relationship with the variance of reaction times.
+
+### Code Block 6: Determining Significant Effects on the Variance of Reaction Time
+```{r}
+# Creating ANOVA
+var_aov <- aov(var_react ~ Person + Noise*Multitask*Dominant_Hand, data = summary_design)
+
+# Showing ANOVA results
+summary(var_aov)
+```
+
+To determine if the results of this analysis were valid, residual diagnostics of the linear regression model had to be conducted, with the diagnostic plots being shown in Figure 4. When checking the diagnostic graphs, the plot of residuals vs fitted values showed no issues with inaccurate model specification. The Q-Q plot shows minor deviations with the residuals following a more long-tailed distribution; however, these deviations were not too large and likely result from the small sample size used after response summarizing. While the scale-location plot appears to show issues, this is also the result of a small number of samples. The points that slightly deviate from the others still have relatively small root standardized residuals, and they appear across fitted values, indicating no heteroscedasticity. Beyond the constant leverage plot, individual standardized residual and high-leverage point testing were performed on observations to determine that the data do not include outliers or highly influential observations. With only minor deviations occurring in the Q-Q plot, the conclusions drawn from this model can be cautiously accepted.
+
+### Figure 4: Residual Diagnostics of the Log of Variance of Reaction Times Model
+```{r, fig.align='center', echo=FALSE}
+par(mfrow=c(2,2))
+plot(var_aov)
+```
+
+```{r, include=FALSE}
+# Testing for outliers based on standardized residuals
+rstandard(var_aov)
+
+# Testing for high-leverage points based on cook's distance
+cooks.distance(var_aov)
+```
+
+Between the two models assessing the effects of the different experimental factors on the mean reaction time and variance of reaction times, only the Multitask factor had a statistically significant relationship with the mean reaction time. Under a standard smaller-the-better procedure, significant factor settings are chosen to minimize the mean response value, and additional factors are used to minimize the variance of the response. Because there was only one significant relationship between the factors and the mean reaction time, the procedure for determining how to achieve the fastest reaction time via a smaller-the-better analysis collapsed into choosing what level of the Multitask factor minimized the mean reaction time. Based on the estimates provided by the linear regression model using sum-coding for dummy variables, this could be modeled as follows: $E[ReactionTime] = 278.84 + 27.81Multitask$ where $Multitask \in \{-1,1\}$, corresponding to the presence or absence of multitasking during the reaction time test. This means that the mean reaction time was minimized at 260.03 milliseconds when there was no multitasking. While this analysis can only be directly used to declare that the act of counting backwards by three during a reaction time test significantly slows reaction times, it serves to more broadly demonstrate the effects of cognitive multitasking on reaction times in general.
+
+
+# Conclusions
+
+This study examined the effects of cognitive multitasking, auditory stimulation, and hand dominance on reaction time using a $2^3$ factorial randomized block design with replication and utilized a smaller-the-better procedure to determine which combination of these factors allowed for the fastest mean reaction time. To determine which factors were statistically related to the mean reaction time and the variance of reaction times, two linear regression models were fit using sum-coding with dummy variables, and ANOVAs were performed. Based on ANOVA results from both models, the only statistically significant relationship at the 5 percent significance level was between cognitive multitasking and the mean reaction time. By interpreting linear regression estimates, it was determined that the process of multitasking by counting backwards slowed mean reaction speeds by an average of 27.81 milliseconds. Because the relationship between multitasking and mean reaction times was the only significant relationship, the smaller-the-better analysis indicates that mean reaction times are fastest when an individual is not multitasking.
+
+Although multitasking was only specified through a counting task, the results of this analysis indicate that dividing attention across tasks significantly reduces reaction times. This has meaningful applications to everyday life. In real-world situations, a person's reaction time can significantly affect their ability to avoid dangerous conditions that can arise during driving, operating equipment, or performing everyday tasks. Based on this analysis, it is essential that individuals avoid multitasking during these situations to be better prepared for any quick decision-making that may occur.
+
+Residual diagnostics of the linear model assumptions were reasonably satisfied. Although minor deviations from the normality assumption of residuals were observed in the variance model, these were likely caused by the small sample size and were not severe enough to undermine the validity of the conclusions. Additional checks of standardized residuals and Cook's distances indicated that outliers and highly influential observations were not present in the data, further supporting the results of the analysis.
+
+This analysis comes with multiple limitations. First, only two participants were tested, limiting the generalizability of the conclusions made. Using participants as blocks in the analysis was used in an attempt to make findings as generalizable as possible, but more participants are needed in future testing to truly make conclusions more widespread. The other limitations come from factors that were only partially controlled for or acknowledged, such as learning effects, fatigue effects, and more. While this experiment attempted to minimize these effects by performing pre-testing trials and keeping the experiment short, future studies should attempt to control for these factors.
+
+Ultimately, this analysis provides evidence that cognitive multitasking is statistically associated with slower reaction times. This finding has practical significance for everyday actions. Though this analysis indicates the significance of multitasking on reaction times, further analyses should be more robustly conducted using a greater number of participants to expand upon its findings.
